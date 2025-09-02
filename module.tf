@@ -3,12 +3,12 @@ data "aws_availability_zones" "available"{
 }
 
 locals {
-  azs= slice(data.aws_availability_zones.available.names, 0, var.az_count)
+  azs= slice(data.aws_availability_zones.available.names, 0, 3)
 }
 
 module "vpc" {
-    source = "./modules/vpc"
-    vpc_cdr="10.0.0.0/16"
+    source = "./modules/vpc/main"
+    vpc_cidr="10.0.0.0/16"
     project="job_assignment"
 }
 
