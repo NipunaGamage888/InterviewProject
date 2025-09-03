@@ -7,18 +7,21 @@ locals {
 }
 
 module "vpc" {
-    source = "./modules/vpc/main"
-    vpc_cidr="10.0.0.0/16"
-    project="job_assignment"
+    source   = "./modules/vpc"
+    vpc_cidr = var.vpc_cidr
+    project  = var.project
+   
 }
 
 module "subnets" {
-  source= "./modules/subnets"
-  vpc_id= module.vpc.vpc_id
-  azs= local.azs
-  public_subnet_masks= 24
-  private_subnet_masks= 24
-  project= "job_assignment"
+   source               = "./modules/subnets"
+   vpc_id               = module.vpc.vpc_id
+   azs                  = local.azs
+   public_subnet_mask   = var.public_subnet_mask
+   private_subnet_mask  = var.private_subnet_mask
+   project              = var.project
+   igw_id = module.vpc.igw_id
+ 
 }
 data "aws_ami" "amazon_linux"{
     most_recent=true
@@ -30,13 +33,13 @@ data "aws_ami" "amazon_linux"{
 }
 
 module "virtual_box"{
-    source = "./modules/ec2"
-    vpc_id=module.vpc.vpc_id
-    public_subnet_ids = module.subnets.public_subnet_ids
-    project = var.project
-    instance_type = var.instance_type
-    key_name = var.key_name
-    ami_id = data.aws_ami.amazon_linux.id
-    allowed_ssh_cidr  = var.allowed_ssh_cidr
+   source            = "./modules/ec2"
+   vpc_id            = module.vpc.vpc_id
+   public_subnet_ids = module.subnets.public_subnet_ids
+   project           = var.project
+   instance_type     = var.instance_type
+   key_name          = var.key_name
+   ami_id            = data.aws_ami.amazon_linux.id
+   allowed_ssh_cidr  = var.allowed_ssh_cidr
 
 }

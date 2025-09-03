@@ -1,15 +1,6 @@
-data "http" "my_ip" {
-  url = "https://checkip.amazonaws.com/"
-}
-
-locals {
-  my_ip_cidr = "${chomp(data.http.my_ip.response_body)}/32"
-}
-
-
 resource "aws_security_group" "web" {
-  vpc_id = aws_vpc.primary.id
-  name   = "job_assignment-web-sg"
+  vpc_id = var.vpc_id
+  name   = "${var.project}-web-sg"
   ingress {
     from_port   = 80
     to_port     = 80
@@ -20,7 +11,7 @@ resource "aws_security_group" "web" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [local.my_ip_cidr]
+    cidr_blocks = [var.allowed_ssh_cidr]
   }
   egress {
     from_port   = 0
@@ -28,6 +19,23 @@ resource "aws_security_group" "web" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+
+resource "tls_private_key" "web_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "web_key" {
+  key_name   = "job-assignment-key"
+  public_key = tls_private_key.web_key.public_key_openssh
+}
+
+resource "local_file" "web_key_pem" {
+  filename = "${path.cwd}/job-assignment-key.pem"
+  content  = tls_private_key.web_key.private_key_pem
+  file_permission = "0400"
 }
 
 resource "aws_instance" "web" {
